@@ -1,0 +1,38 @@
+{
+  "sourceLanguage": "zh-Hans",
+  "strings": {
+    "CFBundleDisplayName": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DotMop"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "点点净"
+          }
+        }
+      }
+    },
+    "NSRemovableVolumesUsageDescription": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DotMop accesses external drives to scan for hidden files and move confirmed items to the Trash."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "点点净需要访问外置磁盘，以扫描隐藏文件并将你确认的项目移入废纸篓。"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}
