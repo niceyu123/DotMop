@@ -1,87 +1,35 @@
-# DotMop · 点点净
+<p align="center">
+  <img src="DotMop/Resources/Assets.xcassets/AppIcon.appiconset/icon-128@2x.png" alt="DotMop 图标" width="96">
+</p>
 
-DotMop 是 macOS 原生外置磁盘清理工具。它在外置磁盘或选定的文件夹中查找 `.DS_Store` 和通过格式校验的 AppleDouble 文件，默认把选中的文件移入废纸篓。应用在本机离线运行。
+<h1 align="center">DotMop · 点点净</h1>
 
-## 运行
+<p align="center">一款原生 macOS 工具，用来扫描和清理 U 盘、移动硬盘与 SD 卡里的 macOS 元数据文件。</p>
 
-- 系统要求为 Apple Silicon Mac、macOS 14.0 或更新版本。开发环境需要支持 Swift 6 的 Xcode。
-- 双击 `DotMop.app`，或在终端用 `open DotMop.app` 启动。默认在启动和接入外置磁盘时自动扫描。需要缩小范围时，在磁盘详情中通过「扫描范围」选择该盘上的文件夹。这个选择在本次挂载期间有效。
-- 左侧「外置磁盘」列表显示每块盘的文件系统、可用空间和总容量。容量数据齐全时，用量条和百分比表示已使用空间的比例。
-- 左侧磁盘名称旁的「推出」会停止该盘上的扫描或清理，等当前文件操作和恢复记录收尾后，请求 macOS 正常推出。
-- 已选择文件夹时，如果挂载路径因磁盘改名而变化，DotMop 会提示重新选择范围。可以重新选择原文件夹，也可以主动切换为整盘扫描。
-- 「设置 → 扫描 → 自动扫描时优先增量扫描」默认开启。DotMop 在本机缓存目录索引。确认同一卷的事件记录可接续后，会复用未变目录的清单，并重新校验候选文件。首次扫描、索引超过七天、记录缺失或手动「重新扫描」时会完整遍历。磁盘在其他操作系统上写入后，可手动重新扫描以覆盖可能缺失的 macOS 事件。
-- 扫描过程中显示动态进度条、已检查数量和已发现数量。点「暂停扫描」可以查看、勾选并清理已发现的文件。清理后仍可点「继续扫描」，接着检查本次暂停前已保存的目录项及后续目录。暂停后也可点「停止扫描」，保留已发现的文件和勾选项供手动清理。暂停时手动更改勾选后，继续扫描也会保留这些勾选，并跳过本次自动清理。暂停的进度在应用运行且磁盘保持连接时有效。清理时会重新校验勾选的文件。
-- macOS 首次请求「可移动宗卷」权限时，允许后即可扫描。若曾拒绝，可以在「系统设置 → 隐私与安全性 → 文件与文件夹」中修改 DotMop 的权限，然后重新扫描。
-- 默认勾选 `.DS_Store`。AppleDouble 需要主动选择，首次选择会显示元数据丢失提示。默认在移入废纸篓前显示确认页。
-- 在「设置 → 清理」可以分别开关「自动扫描完成后清理」和「清理前确认」。自动清理默认关闭。开启后，启动、登录和接盘触发的扫描成功完成时，应用会处理默认选中的文件。开启确认时逐盘确认，关闭确认时直接移入废纸篓。扫描有读取问题或磁盘只读时，应用会保留扫描结果供检查。手动重新扫描可用于单独查看候选文件。
-- 手动清理时，清理按钮旁的「更多清理选项」提供「永久删除」。该操作每次都需要确认，删除后无法从废纸篓恢复。
-- 停止清理后会汇总尚未处理的数量。清理结束后，仍可重试或尚未处理的已选文件继续保留勾选。永久删除成功后会重新读取可用空间。
-- 自动清理的结果和恢复文件夹可在「设置 → 操作记录」查看。
-- 如果文件已移动到原盘的恢复文件夹而废纸篓提交失败，主窗口和菜单栏会保留提示，并提供 Finder 入口。关闭提示后仍可在操作记录定位恢复文件夹。磁盘离线时，重新连接原盘后再打开。
-- 点击菜单栏图标可恢复主窗口、重新扫描或退出。要在登录时扫描外置磁盘，在「设置 → 通用」启用登录启动，以页面显示的 macOS 状态为准。设置可管理语言、外观、扫描偏好和本地操作记录。
-- 「查看文件」打开 Finder 并选中表格中的高亮文件。「文件详情」显示该项的完整路径和修改时间。搜索支持名称和路径，在后台匹配。「全选」和「取消全选」作用于当前搜索与筛选匹配的所有页面。清理确认显示扫描范围、各类型数量和大小，以及被筛选隐藏的已选数量。展开「查看全部已选文件」可以逐条核对路径。
+<p align="center"><strong>简体中文</strong> · <a href="README.en.md">English</a> · <a href="https://github.com/niceyu123/DotMop/releases">下载 / Releases</a></p>
 
-## 构建和测试
+## 下载
 
-打开 `DotMop.xcodeproj`，选择共享的 `DotMop` scheme 和本机作为目标。工程可直接交给 Xcode 构建。终端中从项目目录运行以下命令。
+适用于 **Apple Silicon Mac（arm64）**，要求 **macOS 14.0 或更新版本**。在 [Releases](https://github.com/niceyu123/DotMop/releases) 中找到 `DotMop-1.5-macOS-arm64.zip`，解压后将 `DotMop.app` 拖入「应用程序」。
 
-```bash
-xcodebuild -project DotMop.xcodeproj -scheme DotMop \
-  -destination 'platform=macOS,arch=arm64' \
-  -configuration Debug -derivedDataPath build/DebugDerived build
+1.5 预览包使用 Apple Development 签名，尚未通过 Apple 公证。在其他 Mac 上首次打开时，Gatekeeper 可能阻止运行。Release 页面会标明安装包的签名状态。
 
-xcodebuild -project DotMop.xcodeproj -scheme DotMop \
-  -destination 'platform=macOS,arch=arm64' \
-  -configuration Release -derivedDataPath build build
+## 截图
 
-xcodebuild -project DotMop.xcodeproj -scheme DotMop \
-  -destination 'platform=macOS,arch=arm64' \
-  -derivedDataPath build/TestDerived -parallel-testing-enabled NO test
+主窗口显示外置磁盘和扫描结果。设置中可以调整扫描、清理、语言和外观偏好。
 
-lipo -archs build/Build/Products/Release/DotMop.app/Contents/MacOS/DotMop
-```
+| 主窗口 | 设置 |
+| --- | --- |
+| <img src="docs/screenshots/main-window.png" width="480" alt="点点净主窗口，等待接入可扫描的外置磁盘"> | <img src="docs/screenshots/settings.png" width="360" alt="点点净的通用设置"> |
 
-工程默认使用本机 ad hoc 签名。若要使用开发证书构建，可在 Xcode 的 Signing & Capabilities 中选取自己的团队，或给 Release 命令追加 `CODE_SIGN_IDENTITY='Apple Development' DEVELOPMENT_TEAM='<Team ID>'`。DotMop 以当前用户权限运行，签名版 Release 使用 Hardened Runtime。应用偏好保存在当前用户的偏好目录中。
+## 开始使用
 
-### 打包
+1. 打开点点净，接入外置磁盘。如果 macOS 请求访问可移动宗卷，选择允许。
+2. 选择磁盘，查看扫描结果。可限定到单个文件夹，按名称或路径查找候选文件。
+3. 确认要处理的文件，再移入废纸篓。默认勾选 `.DS_Store`。AppleDouble（`._*`）需要手动选择，清理它可能移除资源分叉、Finder 信息或扩展属性。
 
-```bash
-codesign --verify --deep --strict --verbose=2 build/Build/Products/Release/DotMop.app
+点点净离线运行。默认在启动和接盘时自动扫描，自动清理需要主动开启。只读卷（例如 macOS 原生挂载的 NTFS）可扫描，清理需要卷以可写方式挂载。废纸篓提交失败时，可从操作记录定位原盘上的恢复文件夹。
 
-mkdir -p build/Distribution
-ditto -c -k --sequesterRsrc --keepParent \
-  build/Build/Products/Release/DotMop.app build/Distribution/DotMop-1.5-macOS-arm64.zip
-```
+## 从源码构建
 
-跨机器公开分发时，请使用自己的 Developer ID Application 证书构建，按 Apple 流程提交公证并附加公证票据。交付的本机 Release 使用 Apple Development 签名。
-
-## 清理边界
-
-- 自动识别以系统卷属性、Disk Arbitration 设备信息及 APFS 卷角色为依据。网络卷、启动卷、磁盘映像及 Time Machine 备份卷会被跳过。设备类型或 APFS 卷角色无法确认时会跳过自动扫描。HFS+ 需要能够确认卷根目录没有旧式 Time Machine 备份标记。
-- 每次扫描从选定磁盘的根目录或其指定文件夹开始，跳过符号链接、其他挂载点和系统管理目录。自动清理仅在自动扫描成功完成时触发。
-- AppleDouble 校验只读取文件头和条目表。选择清理后，资源分叉、Finder 信息或扩展属性可能丢失。存在未处理的伴随文件时，DotMop 保留对应候选项。两者都选中时，先处理伴随文件。
-- 清理前重验扫描根目录、路径、卷和文件身份。被跳过或处理失败的项目保留在列表并显示状态，文件身份变化时需重新扫描。成功移入废纸篓、永久删除或确认已离开原位置的项目会从列表移除。结果显示本次成功移动或删除的文件大小。
-- 选择移入废纸篓时，DotMop 在同卷创建恢复文件夹，写入并同步恢复清单后逐个移入候选文件，再通过 macOS 接口把恢复文件夹移入废纸篓。若系统未能移入废纸篓，文件保留在原磁盘的恢复文件夹中。结果与本地操作记录会显示该文件夹。文件使用独立的保存名，防止 Finder 在废纸篓中合并或改写它们。超过 512 项时分到多个子目录，恢复清单记录每个文件在恢复文件夹内的相对路径。恢复时查看文件夹里的 `Restore.txt` 和 `Paths.jsonl`，用 `mv -n` 按记录的原路径移回并恢复文件名。如果挂载路径变化，先根据 `Restore.txt` 的卷 UUID 和卷内相对位置确认原扫描范围。exFAT 上恢复 AppleDouble 时，macOS 可能为恢复的文件再生成伴随文件。校验与移动或删除之间仍有文件系统竞态窗口。
-- 扫描问题保留前 100 条路径明细。操作记录最多保留 30 条操作及每条最多 40 条问题明细，优先保留尚未关闭提示的恢复记录。操作记录可从设置清除。
-
-## 实机验收
-
-1.5 优化版在 macOS 27.2 上通过 55 项 XCTest。临时 exFAT 磁盘映像在重挂载后因无可用事件日志回退全扫，候选集合和手动全扫一致。模拟废纸篓提交被拒并在第一项处理后取消，按恢复清单移回该文件并核对内容，其余两项保持原位。测试卷已正常推出。
-
-1.5 通过 51 项 XCTest。在最小窗口核对了侧栏的容量显示，并从磁盘名称旁的图标成功推出临时磁盘映像。
-
-1.4 通过 39 项 XCTest。APFS 临时卷验证了新增文件后的增量扫描，以及卸载重挂载后复用目录清单。exFAT 临时卷验证了挂载期间可使用增量扫描，重挂载时若日志标识变化会完整扫描。T7 Shield 实机上取消扫描后保留了 358 个已发现的 AppleDouble 文件。10 万项目的合成样本中，增量检查了 20,400 项，与全扫找到的 20,200 个候选一致。
-
-1.3 在 Apple Silicon、macOS 27.2 上通过 37 项 XCTest。临时目录覆盖了启动后自动清理、接盘通知、逐盘确认、手动清理和旧版设置迁移，并验证了只读和部分扫描的磁盘会保留文件。签名版在本机实体 exFAT 盘上完成启动扫描，设置页显示自动清理关闭、清理前确认开启。
-
-1.2 在 Apple Silicon、macOS 27.2 上通过 32 项 XCTest。Debug 和签名 Release 均为 arm64，Release 最低系统版本为 14.0。实体 USB exFAT 盘验证了启动扫描、文件夹范围、路径搜索和确认页的隐藏选中项。实际移动与恢复在临时卷上验证。exFAT 上恢复了 3 个文件并核对内容及扩展属性，还验证了扫描期间强制卸载时停止。APFS、FAT16、FAT32 临时卷验证了两类候选文件的移动和恢复。
-
-在本机 APFS 合成数据中，扫描 100,400 个目录项并识别 20,200 个候选，首批结果约 0.13 秒，完整扫描约 2.20 秒。20,200 个候选的名称和路径匹配中位耗时约 49–61 毫秒。这些数值来自命令行测试，实际速度取决于磁盘和目录结构。
-
-1.1 在 Apple Silicon、macOS 27.2、Xcode 27.2 上构建。Debug 和 Release 均通过，`lipo -archs` 均返回 `arm64`，Release 的 Mach-O 最低系统版本为 14.0。XCTest 共 29 项全部通过，包含启动与挂载时自动扫描、读取权限受限后的重试。临时 exFAT RAM 盘复验了挂载点边界、AppleDouble 格式校验和实际移入废纸篓。
-
-1.1 签名版在实体 USB exFAT 盘上完成首次整盘扫描。macOS 允许可移动宗卷访问后，应用直接扫描。正常卸载后磁盘从列表移除，重新挂载后自动扫描整块磁盘。选择专用测试文件夹后只扫描该目录，识别 `.DS_Store` 和有效 AppleDouble，跳过伪造的 `._` 文件。已核对清理确认页并取消实体盘上的清理操作，随后移除了测试文件夹。
-
-1.0 的签名版已在实体 USB exFAT 盘上验证识别、首次文件夹授权、退出重开后恢复授权、系统正常卸载和重新挂载后自动扫描。专用文件夹内识别出 1 个 `.DS_Store` 和 2 个合法 AppleDouble，跳过 `.DS_Store.bak` 及纯文本 `._` 文件。已核对 AppleDouble 风险提示和清理确认页，并通过取消结束清理流程。随后撤销测试授权并移除测试文件夹。
-
-待实机核对的项目包括 APFS、FAT32 和 HFS+ 实体介质，扫描期间直接拔盘，macOS 14 上的运行情况，以及注销重登后的静默扫描与菜单栏恢复窗口。
+用支持 Swift 6 的 Xcode 打开 `DotMop.xcodeproj`，选择共享的 `DotMop` scheme，并以本机 Mac 为目标构建。构建、打包、扫描边界和恢复流程见[使用与开发指南](docs/使用与开发.md)。
