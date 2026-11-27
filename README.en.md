@@ -16,11 +16,11 @@ The 1.5 preview build uses an Apple Development signature and has not been notar
 
 ## Screenshots
 
-The main window lists external drives and scan results. Settings covers scanning, cleanup, language, and appearance. The captures below show the Simplified Chinese interface. English is available under Settings.
+The main window lists external drives and scan results. Settings covers scanning, cleanup, language, and appearance.
 
 | Main window | Settings |
 | --- | --- |
-| <img src="docs/screenshots/main-window.png" width="480" alt="DotMop main window waiting for a supported external disk"> | <img src="docs/screenshots/settings.png" width="360" alt="DotMop general settings"> |
+| <img src="docs/screenshots/main-window-en.png" width="480" alt="DotMop main window waiting for a supported external disk"> | <img src="docs/screenshots/settings-en.png" width="360" alt="DotMop general settings"> |
 
 ## Getting started
 
