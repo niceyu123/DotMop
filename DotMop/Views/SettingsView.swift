@@ -18,6 +18,7 @@ struct SettingsView: View {
     @State private var pane: Pane = .general
     @State private var showingAppleDoubleWarning = false
     @State private var showingLog = false
+    @State private var showingPrivacyPolicy = false
     @State private var confirmingClearLog = false
 
     var body: some View {
@@ -55,6 +56,26 @@ struct SettingsView: View {
         .alert("清除本地操作记录？", isPresented: $confirmingClearLog) {
             Button("取消", role: .cancel) {}
             Button("清除记录", role: .destructive) { coordinator.model.operationLog.clear() }
+        }
+        .sheet(isPresented: $showingPrivacyPolicy) {
+            VStack(alignment: .leading, spacing: 14) {
+                ScrollView {
+                    if let url = Bundle.main.url(forResource: "PRIVACY", withExtension: "md"),
+                       let policy = try? String(contentsOf: url, encoding: .utf8) {
+                        Text(verbatim: policy)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .textSelection(.enabled)
+                    }
+                }
+                HStack {
+                    Link("GitHub Issues", destination: URL(string: "https://github.com/niceyu123/DotMop/issues")!)
+                    Spacer()
+                    Button("关闭") { showingPrivacyPolicy = false }
+                        .keyboardShortcut(.cancelAction)
+                }
+            }
+            .padding(20)
+            .frame(width: 515, height: 360)
         }
         .sheet(isPresented: $showingLog) {
             OperationLogView(log: coordinator.model.operationLog, language: preferences.value.language,
@@ -100,6 +121,9 @@ struct SettingsView: View {
                 }
                 Toggle("显示菜单栏图标", isOn: $preferences.value.showMenuBar)
                 Toggle("关闭主窗口后继续运行", isOn: $preferences.value.keepRunning)
+            }
+            Section {
+                Button("隐私政策") { showingPrivacyPolicy = true }
             }
         }
     }

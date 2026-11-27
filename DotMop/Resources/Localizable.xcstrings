@@ -1,6 +1,102 @@
 {
   "sourceLanguage": "zh-Hans",
   "strings": {
+    "授权外置磁盘…": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "授权外置磁盘…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Authorize External Drive…"
+          }
+        }
+      }
+    },
+    "需要磁盘授权": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要磁盘授权"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drive Access Required"
+          }
+        }
+      }
+    },
+    "授权访问": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "授权访问"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grant Access"
+          }
+        }
+      }
+    },
+    "请选择外置磁盘的根目录。授权后可缩小扫描范围。": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请选择外置磁盘的根目录。授权后可缩小扫描范围。"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select the root of an external drive. You can narrow the scan to a folder after granting access."
+          }
+        }
+      }
+    },
+    "请选择要扫描的外置磁盘根目录。": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请选择要扫描的外置磁盘根目录。"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select the root of the external drive you want to scan."
+          }
+        }
+      }
+    },
+    "隐私政策": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隐私政策"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy Policy"
+          }
+        }
+      }
+    },
     "有文件留在原盘的恢复文件夹": {
       "localizations": {
         "zh-Hans": {

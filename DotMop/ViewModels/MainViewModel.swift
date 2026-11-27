@@ -10,6 +10,7 @@ final class MainViewModel {
 
     let preferences: PreferencesStore
     let operationLog: OperationLogStore
+    private let volumeAuthorization: VolumeAuthorizationStore?
     private(set) var disks: [DiskInfo] = []
     private(set) var folderScopes: [String: VolumeBoundary] = [:]
     var selectedID: String?
@@ -27,7 +28,7 @@ final class MainViewModel {
     @ObservationIgnored private var observers: [NSObjectProtocol] = []
     @ObservationIgnored private var refreshGeneration = 0
     @ObservationIgnored private var scansAfterRefresh: Set<RefreshScan> = []
-    @ObservationIgnored private let discoverDisks: @Sendable () -> [DiskInfo]
+    @ObservationIgnored private let discoverDisks: @Sendable ([URL]?) -> [DiskInfo]
     @ObservationIgnored private let verifyVolume: @Sendable (VolumeReference) throws -> Void
     @ObservationIgnored private let ejectVolume: @Sendable (VolumeReference) throws -> Void
     @ObservationIgnored private let cleanFiles: @Sendable (VolumeBoundary, [CleanableFile], (CleanupProgress) -> Void) -> CleanupResult
@@ -41,10 +42,15 @@ final class MainViewModel {
     @ObservationIgnored private var cleanupCompletion: Task<Void, Never>?
 
     var selectedDisk: DiskInfo? { disks.first { $0.id == selectedID } }
+    var usesVolumeAuthorization: Bool { volumeAuthorization != nil }
+
+    func needsVolumeAuthorization(_ disk: DiskInfo) -> Bool {
+        volumeAuthorization != nil && volumeAuthorization?.access(for: disk.volume) == nil
+    }
 
     init(preferences: PreferencesStore,
          operationLog: OperationLogStore = OperationLogStore(),
-         discoverDisks: @escaping @Sendable () -> [DiskInfo] = DiskService.discover,
+         discoverDisks: (@Sendable () -> [DiskInfo])? = nil,
          verifyVolume: @escaping @Sendable (VolumeReference) throws -> Void = DiskService.verifyBackupStatus,
          ejectVolume: @escaping @Sendable (VolumeReference) throws -> Void = {
              try $0.verify()
@@ -53,10 +59,16 @@ final class MainViewModel {
          cleanFiles: @escaping @Sendable (VolumeBoundary, [CleanableFile], (CleanupProgress) -> Void) -> CleanupResult = {
              CleanupService.run(boundary: $0, files: $1, onProgress: $2)
          },
-         showAutomaticConfirmation: @escaping () -> Void = {}) {
+         showAutomaticConfirmation: @escaping () -> Void = {},
+         volumeAuthorization: VolumeAuthorizationStore? = VolumeAuthorizationStore.forCurrentBuild()) {
         self.preferences = preferences
         self.operationLog = operationLog
-        self.discoverDisks = discoverDisks
+        self.volumeAuthorization = volumeAuthorization
+        if let discoverDisks {
+            self.discoverDisks = { _ in discoverDisks() }
+        } else {
+            self.discoverDisks = DiskService.discover
+        }
         self.verifyVolume = verifyVolume
         self.ejectVolume = ejectVolume
         self.cleanFiles = cleanFiles
@@ -110,8 +122,11 @@ final class MainViewModel {
         let generation = refreshGeneration
         isRefreshing = true
         Task {
+            let restoredAccess = volumeAuthorization?.resolveSavedAccess() ?? [:]
+            let authorizedAccess = volumeAuthorization.map { $0.activeAccess + Array(restoredAccess.values) }
             let discovered = await Task.detached(priority: .utility) { [discoverDisks] in
-                discoverDisks()
+                defer { withExtendedLifetime(authorizedAccess) {} }
+                return discoverDisks(authorizedAccess?.map(\.url))
             }.value
             guard generation == refreshGeneration else { return }
             let previousVolumes = Dictionary(uniqueKeysWithValues: disks.map { ($0.id, $0.volume) })
@@ -121,6 +136,7 @@ final class MainViewModel {
                 invalidateScan(for: disk.id)
             }
             disks = discovered
+            volumeAuthorization?.refresh(volumes: discovered.map(\.volume), resolved: restoredAccess)
             for disk in disks {
                 if let previous = previousVolumes[disk.id], previous != disk.volume {
                     invalidateScan(for: disk.id)
@@ -147,7 +163,51 @@ final class MainViewModel {
         }
     }
 
+    func authorizeVolume(_ disk: DiskInfo? = nil) {
+        guard let volumeAuthorization, !isStopping, !isChoosingFolder, cleaningDiskID == nil,
+              ejectingDiskID == nil, pendingCleanup == nil, !cleanupConfirmationIsVisible else { return }
+        isChoosingFolder = true
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.resolvesAliases = false
+        panel.allowsMultipleSelection = false
+        panel.directoryURL = disk?.volume.url ?? URL(fileURLWithPath: "/Volumes", isDirectory: true)
+        panel.prompt = text("授权访问")
+        panel.message = text("请选择外置磁盘的根目录。授权后可缩小扫描范围。")
+
+        Task {
+            defer {
+                isChoosingFolder = false
+                processAutomaticCleanupQueue()
+            }
+            guard await panel.begin() == .OK, let url = panel.url else { return }
+            // NSOpenPanel starts an implicit scope. VolumeAccess retains a separate scope for workers.
+            defer { url.stopAccessingSecurityScopedResource() }
+            guard !isStopping else { return }
+            guard let access = VolumeAccess(url: url),
+                  let selected = DiskService.externalDisk(at: url),
+                  disk.map({ $0.volume == selected.volume }) ?? true else {
+                errorMessage = "请选择要扫描的外置磁盘根目录。"
+                return
+            }
+            do {
+                try volumeAuthorization.remember(access, for: selected.volume,
+                                                 persistForReconnect: folderScopes[selected.id] == nil)
+                if !disks.contains(where: { $0.id == selected.id }) {
+                    disks.append(selected)
+                    disks.sort { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+                }
+                selectedID = selected.id
+                startScan(selected.id)
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+
     func chooseFolder(for disk: DiskInfo) {
+        guard !needsVolumeAuthorization(disk) else { return }
         guard !isChoosingFolder, cleaningDiskID != disk.id, ejectingDiskID != disk.id else { return }
         isChoosingFolder = true
         let panel = NSOpenPanel()
@@ -166,6 +226,7 @@ final class MainViewModel {
                 processAutomaticCleanupQueue()
             }
             guard await panel.begin() == .OK, let url = panel.url else { return }
+            defer { if usesVolumeAuthorization { url.stopAccessingSecurityScopedResource() } }
             do {
                 let boundary = try await Task.detached(priority: .userInitiated) {
                     try VolumeBoundary(volume: disk.volume, root: url)
@@ -188,12 +249,16 @@ final class MainViewModel {
         }
         guard cleaningDiskID != id, ejectingDiskID != id else { return }
         folderScopes[id] = ScopePath.same(boundary.root, boundary.volume.url) ? nil : boundary
+        volumeAuthorization?.setWholeVolumeApproved(folderScopes[id] == nil, for: boundary.volume)
         invalidateScan(for: id)
         startScan(id)
     }
 
     func scanWholeDisk(_ id: String) {
-        guard cleaningDiskID != id, ejectingDiskID != id, folderScopes.removeValue(forKey: id) != nil else { return }
+        guard cleaningDiskID != id, ejectingDiskID != id,
+              let disk = disks.first(where: { $0.id == id }), !needsVolumeAuthorization(disk),
+              folderScopes.removeValue(forKey: id) != nil else { return }
+        volumeAuthorization?.setWholeVolumeApproved(true, for: disk.volume)
         invalidateScan(for: id)
         startScan(id)
     }
@@ -201,6 +266,7 @@ final class MainViewModel {
     private func removeVolume(at url: URL) {
         let disconnected = disks.filter { ScopePath.same($0.volume.url, url) }
         for disk in disconnected {
+            volumeAuthorization?.remove(disk.volume)
             folderScopes.removeValue(forKey: disk.id)
             invalidateScan(for: disk.id)
         }
@@ -251,7 +317,7 @@ final class MainViewModel {
 
     func startScan(_ id: String, automatically: Bool = false) {
         guard !isStopping, let disk = disks.first(where: { $0.id == id }),
-              !requiresFolderReselection(disk),
+              !needsVolumeAuthorization(disk), !requiresFolderReselection(disk),
               cleaningDiskID != id, ejectingDiskID != id else { return }
         automaticCleanupQueue.removeAll { $0 == id }
         if pendingCleanup?.diskID == id { pendingCleanup = nil }
@@ -269,8 +335,12 @@ final class MainViewModel {
         let pause = ScanPauseControl()
         scanPauses[id] = pause
         let (events, continuation) = AsyncStream<ScanEvent>.makeStream(bufferingPolicy: .bufferingNewest(1))
+        let access = volumeAuthorization?.access(for: volume)
         scanTasks[id] = Task.detached(priority: .utility) { [verifyVolume] in
-            defer { continuation.finish() }
+            defer {
+                withExtendedLifetime(access) {}
+                continuation.finish()
+            }
             var files: [CleanableFile] = []
             var progress = ScanSummary()
             var scannedBoundary: VolumeBoundary?
@@ -400,6 +470,7 @@ final class MainViewModel {
     private func cleanupRequest(for id: String, visibleFiles: [CleanableFile]? = nil,
                                 automatic: Bool = false, method: CleanupMethod = .trash) -> CleanupRequest? {
         guard let disk = disks.first(where: { $0.id == id && !$0.isReadOnly }),
+              !needsVolumeAuthorization(disk),
               let state = scans[id], state.phase.allowsCleanup(automatic: automatic),
               let boundary = state.boundary, state.selection.count > 0 else { return nil }
         let settings = preferences.value
@@ -422,7 +493,7 @@ final class MainViewModel {
     private func startCleanup(_ request: CleanupRequest) {
         guard !isStopping, ejectingDiskID == nil, cleaningDiskID == nil,
               let disk = disks.first(where: { $0.id == request.diskID && !$0.isReadOnly }),
-              disk.volume == request.boundary.volume,
+              disk.volume == request.boundary.volume, !needsVolumeAuthorization(disk),
               let state = scans[request.diskID], state.phase.allowsCleanup(automatic: request.automatic),
               state.boundary == request.boundary else {
             errorMessage = SafetyError.scopeChanged.localizedDescription
@@ -432,8 +503,12 @@ final class MainViewModel {
         cleaningDiskID = request.diskID
         cleanupProgress = CleanupProgress(processed: 0, total: request.files.count)
         let (progress, continuation) = AsyncStream<CleanupProgress>.makeStream(bufferingPolicy: .bufferingNewest(1))
+        let access = volumeAuthorization?.access(for: request.boundary.volume)
         let worker = Task.detached(priority: .userInitiated) { [verifyVolume, cleanFiles] in
-            defer { continuation.finish() }
+            defer {
+                withExtendedLifetime(access) {}
+                continuation.finish()
+            }
             do {
                 try Task.checkCancellation()
                 try verifyVolume(disk.volume)
@@ -484,7 +559,7 @@ final class MainViewModel {
     }
 
     func revealRecoveryFolder(_ recovery: RetainedRecovery) -> Bool {
-        guard let location = recovery.location(on: disks.map(\.volume)),
+        guard let location = recovery.location(on: disks.filter { !needsVolumeAuthorization($0) }.map(\.volume)),
               (try? location.volume.verify()) != nil,
               let folder = try? OpenFile(at: location.url, directory: true),
               let filesystem = try? folder.filesystem(),

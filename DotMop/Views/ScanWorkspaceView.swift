@@ -236,7 +236,16 @@ struct ScanWorkspaceView: View {
     @ViewBuilder private var empty: some View {
         switch phase {
         case .ready:
-            if model.requiresFolderReselection(disk) {
+            if model.needsVolumeAuthorization(disk) {
+                ContentUnavailableView {
+                    Label("需要磁盘授权", systemImage: "externaldrive.badge.questionmark")
+                } description: {
+                    Text("请选择外置磁盘的根目录。授权后可缩小扫描范围。")
+                } actions: {
+                    Button("授权访问") { model.authorizeVolume(disk) }
+                        .disabled(model.isChoosingFolder)
+                }
+            } else if model.requiresFolderReselection(disk) {
                 ContentUnavailableView("请重新选择扫描范围", systemImage: "folder.badge.questionmark",
                                        description: Text("磁盘的挂载路径已变化。请在「扫描范围」中重新选择文件夹，或选择扫描整块磁盘。"))
             } else {
@@ -345,7 +354,8 @@ struct ScanWorkspaceView: View {
                     .disabled(isCleaning)
             } else {
                 Button("重新扫描") { model.startScan(disk.id) }
-                    .disabled(isCleaning || model.ejectingDiskID == disk.id || model.requiresFolderReselection(disk))
+                    .disabled(isCleaning || model.ejectingDiskID == disk.id
+                              || model.needsVolumeAuthorization(disk) || model.requiresFolderReselection(disk))
             }
             Button("查看文件") {
                 if let highlightedFile { model.reveal(highlightedFile) }

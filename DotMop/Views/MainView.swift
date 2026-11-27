@@ -95,6 +95,11 @@ struct MainView: View {
                 .font(.headline)
                 .accessibilityAddTraits(.isHeader)
             Spacer()
+            if coordinator.model.usesVolumeAuthorization {
+                Button("授权外置磁盘…") { coordinator.model.authorizeVolume() }
+                    .disabled(coordinator.model.isChoosingFolder || coordinator.model.cleaningDiskID != nil
+                              || coordinator.model.ejectingDiskID != nil)
+            }
             Button(action: coordinator.showSettings) {
                 Label("设置", systemImage: "gearshape")
             }

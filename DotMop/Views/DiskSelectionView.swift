@@ -151,7 +151,8 @@ struct DiskDetailsView: View {
                 .menuStyle(.borderlessButton)
                 .menuIndicator(.visible)
                 .accessibilityIdentifier("scan-scope")
-                .disabled(model.isChoosingFolder || model.cleaningDiskID == disk.id || model.ejectingDiskID == disk.id)
+                .disabled(model.isChoosingFolder || model.cleaningDiskID == disk.id || model.ejectingDiskID == disk.id
+                          || model.needsVolumeAuthorization(disk))
                 Spacer(minLength: 4)
                 let mountPath = disk.volume.url.path(percentEncoded: false)
                 Text(verbatim: mountPath)

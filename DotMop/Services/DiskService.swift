@@ -34,14 +34,27 @@ enum DiskService {
         .volumeTotalCapacityKey, .volumeAvailableCapacityKey
     ]
 
-    static func discover() -> [DiskInfo] {
+    static func discover(authorizedRoots: [URL]?) -> [DiskInfo] {
         guard let session = DASessionCreate(kCFAllocatorDefault) else { return [] }
-        let urls = FileManager.default.mountedVolumeURLs(includingResourceValuesForKeys: Array(keys),
-                                                         options: [.skipHiddenVolumes]) ?? []
+        let urls = FileManager.default.mountedVolumeURLs(
+            includingResourceValuesForKeys: authorizedRoots == nil ? Array(keys) : nil,
+            options: [.skipHiddenVolumes]
+        ) ?? []
         var seen: Set<String> = []
-        return urls.compactMap { diskInfo(at: $0, session: session) }
+        return urls.filter { url in
+            authorizedRoots?.contains { ScopePath.same($0, url) } ?? true
+        }
+            .compactMap { diskInfo(at: $0, session: session) }
             .filter { seen.insert($0.id).inserted }
             .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+    }
+
+    static func externalDisk(at root: URL) -> DiskInfo? {
+        guard let session = DASessionCreate(kCFAllocatorDefault),
+              let mounted = FileManager.default.mountedVolumeURLs(includingResourceValuesForKeys: nil,
+                                                                  options: [.skipHiddenVolumes])?
+                .first(where: { ScopePath.same($0, root) }) else { return nil }
+        return diskInfo(at: mounted, session: session)
     }
 
     private static func diskInfo(at url: URL, session: DASession) -> DiskInfo? {
